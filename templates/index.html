@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Function Plotter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 2rem auto;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 1rem;
+        }
+        .form-control {
+            border-radius: 8px;
+        }
+        .btn-primary {
+            border-radius: 8px;
+            padding: 0.5rem 2rem;
+        }
+        #plot-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            min-height: 800px;
+            position: relative;
+            border: 3px solid black;
+        }
+        .result-box {
+            background-color: #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+        @media (min-width: 992px) {
+            .col-md-3 {
+                flex: 0 0 auto;
+                width: 22%;
+            }
+            .col-md-9 {
+                flex: 0 0 auto;
+                width: 78%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">3D Function Plotter</h1>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Function Input</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="plot-form">
+                            <div class="mb-3">
+                                <label for="function" class="form-label">Function (z = f(x,y))</label>
+                                <input type="text" class="form-control" id="function" 
+                                       placeholder="Example: 1/(1-x**2-y**2)" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label for="x_min" class="form-label">X Min</label>
+                                        <input type="number" class="form-control" id="x_min" value="-5" required>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label for="x_max" class="form-label">X Max</label>
+                                        <input type="number" class="form-control" id="x_max" value="5" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label for="y_min" class="form-label">Y Min</label>
+                                        <input type="number" class="form-control" id="y_min" value="-5" required>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label for="y_max" class="form-label">Y Max</label>
+                                        <input type="number" class="form-control" id="y_max" value="5" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label for="z_min" class="form-label">Z Min</label>
+                                        <input type="number" class="form-control" id="z_min" value="-5" required>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label for="z_max" class="form-label">Z Max</label>
+                                        <input type="number" class="form-control" id="z_max" value="5" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Plot Function</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">3D Plot</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="plot-container">
+                            <div id="loading" class="loading">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Generating plot...</p>
+                            </div>
+                            <div id="plot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Nuevo bloque de resultados debajo de la fila principal -->
+        <div class="row">
+            <div class="col-12 col-md-6 offset-md-1">
+                <div class="result-box mt-3 text-start">
+                    <h5>Resultados de Derivadas e Integrales</h5>
+                    <h6 class="mt-3">Derivadas Parciales:</h6>
+                    <p id="dx-result">\( \frac{\partial f}{\partial x} = \)</p>
+                    <p id="dy-result">\( \frac{\partial f}{\partial y} = \)</p>
+                    <h6 class="mt-3">Integrales Dobles:</h6>
+                    <p id="integral-dxdy-result">\( \iint f(x, y)\,dx\,dy = \)</p>
+                    <p id="integral-dydx-result">\( \iint f(x, y)\,dy\,dx = \)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- MathJax for LaTeX rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                packages: ['base', 'ams', 'noerrors', 'noundefined']
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady().then(() => {
+                        console.log('MathJax initial typesetting complete');
+                    });
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        async function updatePlot() {
+            const loading = document.getElementById('loading');
+            const plotDiv = document.getElementById('plot');
+            loading.style.display = 'block';
+            plotDiv.innerHTML = '';
+            const data = {
+                function: document.getElementById('function').value,
+                x_min: document.getElementById('x_min').value,
+                x_max: document.getElementById('x_max').value,
+                y_min: document.getElementById('y_min').value,
+                y_max: document.getElementById('y_max').value,
+                z_min: document.getElementById('z_min').value,
+                z_max: document.getElementById('z_max').value
+            };
+            try {
+                const response = await fetch('/plot', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    const plotData = JSON.parse(result.plot);
+                    Plotly.newPlot('plot', plotData.data, plotData.layout);
+                    
+                    // Actualizar las ecuaciones con mejor formato
+                    document.getElementById('dx-result').innerHTML = `\\[${result.dx}\\]`;
+                    document.getElementById('dy-result').innerHTML = `\\[${result.dy}\\]`;
+                    document.getElementById('integral-dxdy-result').innerHTML = `\\[${result.integral_dxdy}\\]`;
+                    document.getElementById('integral-dydx-result').innerHTML = `\\[${result.integral_dydx}\\]`;
+                    
+                    // Forzar el re-renderizado de MathJax
+                    if (window.MathJax) {
+                        await MathJax.typesetPromise();
+                    }
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        document.getElementById('plot-form').addEventListener('submit', async (e) => {
+            if (e) e.preventDefault();
+            updatePlot();
+        });
+    </script>
+</body>
+</html> 
