@@ -24,7 +24,7 @@ def safe_eval_function(func_str):
         'np.exp': 'exp',
         'np.log': 'log',
         'np.sqrt': 'sqrt',
-        'np.abs': 'Abs',
+        'np.abs': 'abs',
         'np.arcsin': 'asin',
         'np.arccos': 'acos',
         'np.arctan': 'atan',
