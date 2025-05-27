@@ -34,6 +34,7 @@
         .container {
             max-width: 1600px;
             margin: 2rem auto;
+            transition: margin-right 0.3s ease;
         }
         .card {
             border-radius: 15px;
@@ -77,11 +78,17 @@
             text-align: center;
             margin: 2rem 0;
         }
-        .theme-switch {
+        .header-buttons {
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 1000;
+            z-index: 1001;
+            transition: right 0.3s ease;
+            display: flex;
+            gap: 10px;
+        }
+        .theme-switch {
+            /* margin-left: 10px; */
         }
         .engineering-text {
             position: fixed;
@@ -106,10 +113,7 @@
             }
         }
         .history-tab {
-            position: fixed;
-            top: 20px;
-            right: 150px;
-            z-index: 1000;
+            /* Regla CSS vacía eliminada */
         }
         .history-panel {
             position: fixed;
@@ -123,11 +127,17 @@
             z-index: 999;
             padding: 20px;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         .history-panel.active {
             right: 0;
         }
+        .history-panel.active ~ .header-buttons {
+             right: 420px;
+        }
         .history-item {
+            position: relative;
             padding: 10px;
             margin-bottom: 10px;
             border-radius: 8px;
@@ -135,10 +145,17 @@
             border: 1px solid var(--bs-border-color);
             cursor: pointer;
             transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .history-item:hover {
             background-color: var(--bs-primary);
             color: white;
+        }
+        .history-content {
+             flex-grow: 1;
+             padding-right: 10px;
         }
         .history-header {
             display: flex;
@@ -150,6 +167,25 @@
             cursor: pointer;
             font-size: 1.5rem;
         }
+        .delete-history-item {
+            flex-shrink: 0;
+            cursor: pointer;
+            color: #dc3545;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            background-color: transparent;
+            border: none;
+        }
+        .delete-history-item:hover {
+            color: #bd2130;
+            background-color: rgba(220, 53, 69, 0.2);
+            border-radius: 50%;
+        }
         [data-bs-theme="dark"] .history-panel {
             background-color: #2c3034;
             border-left: 1px solid #373b3e;
@@ -158,37 +194,47 @@
             background-color: #2c3034;
             border-color: #373b3e;
         }
+        [data-bs-theme="dark"] .delete-history-item {
+            color: #dc3545;
+            background-color: transparent;
+        }
+        [data-bs-theme="dark"] .delete-history-item:hover {
+            color: #dc3545;
+            background-color: rgba(220, 53, 69, 0.2);
+        }
     </style>
 </head>
 <body>
+    <div class="header-buttons">
+        <button class="btn btn-primary history-tab" onclick="toggleHistory()">
+            Historial
+        </button>
     <button class="btn btn-primary theme-switch" onclick="toggleTheme()">
         Cambiar Tema
     </button>
-    <button class="btn btn-primary history-tab" onclick="toggleHistory()">
-        Historial
-    </button>
-    <div class="engineering-text">INGENIERÍA SOFTWARE</div>
+    </div>
+    <div class="engineering-text">INGENIERÍA DE SOFTWARE</div>
     <div class="history-panel">
         <div class="history-header">
-            <h4>Historial de Funciones</h4>
+            <h4></h4>
             <span class="close-history" onclick="toggleHistory()">&times;</span>
         </div>
         <div id="history-list"></div>
     </div>
     <div class="container">
-        <h1 class="text-center mb-4">3D Function Plotter</h1>
+        <h1 class="text-center mb-4">Graficador de Funciones 3D</h1>
         <div class="row">
             <div class="col-md-3">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">Function Input</h5>
+                        <h5 class="mb-0">Entrada de Función</h5>
                     </div>
                     <div class="card-body">
                         <form id="plot-form">
                             <div class="mb-3">
-                                <label for="function" class="form-label">Function (z = f(x,y))</label>
+                                <label for="function" class="form-label">Función (z = f(x,y))</label>
                                 <input type="text" class="form-control" id="function" 
-                                       placeholder="Example: x^2 + y^2" required>
+                                       placeholder="Ejemplo: x^2 + y^2" required>
                             </div>
                             <div class="row">
                                 <div class="col-6">
@@ -240,15 +286,15 @@
             <div class="col-md-9">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">3D Plot</h5>
+                        <h5 class="mb-0">Gráfico 3D</h5>
                     </div>
                     <div class="card-body">
                         <div id="plot-container">
                             <div id="loading" class="loading">
                                 <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
+                                    <span class="visually-hidden">Cargando...</span>
                                 </div>
-                                <p class="mt-2">Generating plot...</p>
+                                <p class="mt-2">Generando gráfico...</p>
                             </div>
                             <div id="plot"></div>
                         </div>
@@ -261,7 +307,7 @@
             <div class="col-12 col-md-6 offset-md-1">
                 <div class="result-box mt-3 text-start">
                     <h5>Resultados de Derivadas e Integrales</h5>
-                    <h6 class="mt-3">Derivadas Parciales:</h6>
+                    <h5 class="mt-3">Derivadas Parciales:</h5>
                     <p id="dx-result">\( \frac{\partial f}{\partial x} = \)</p>
                     <p id="dy-result">\( \frac{\partial f}{\partial y} = \)</p>
                     <h6 class="mt-3">Integrales Dobles:</h6>
@@ -298,12 +344,14 @@
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>
-        async function updatePlot() {
+        async function updatePlot(functionData, options = {}) {
             const loading = document.getElementById('loading');
             const plotDiv = document.getElementById('plot');
             loading.style.display = 'block';
             plotDiv.innerHTML = '';
-            const data = {
+            
+            // Use provided functionData or get from form
+            const data = functionData || {
                 function: document.getElementById('function').value,
                 x_min: document.getElementById('x_min').value,
                 x_max: document.getElementById('x_max').value,
@@ -312,6 +360,7 @@
                 z_min: document.getElementById('z_min').value,
                 z_max: document.getElementById('z_max').value
             };
+
             try {
                 const response = await fetch('/plot', {
                     method: 'POST',
@@ -329,8 +378,10 @@
                     document.getElementById('integral-dxdy-result').innerHTML = `\\[${result.integral_dxdy}\\]`;
                     document.getElementById('integral-dydx-result').innerHTML = `\\[${result.integral_dydx}\\]`;
                     
-                    // Agregar al historial
+                    // Agregar o mover al historial solo si no viene del historial
+                    if (!options.fromHistory) {
                     addToHistory(data);
+                    }
                     
                     // Forzar el re-renderizado de MathJax
                     if (window.MathJax) {
@@ -345,9 +396,10 @@
                 loading.style.display = 'none';
             }
         }
+
         document.getElementById('plot-form').addEventListener('submit', async (e) => {
             if (e) e.preventDefault();
-            updatePlot();
+            updatePlot(); // Call updatePlot without data, it will take from form
         });
     </script>
     <script>
@@ -373,7 +425,14 @@
         // Funciones para el historial
         function toggleHistory() {
             const panel = document.querySelector('.history-panel');
-            panel.classList.toggle('active');
+            const container = document.querySelector('.container');
+            const isActive = panel.classList.toggle('active');
+            
+            if (isActive) {
+                container.style.marginRight = '400px'; // Ancho del panel
+            } else {
+                container.style.marginRight = 'auto';
+            }
         }
 
         function addToHistory(functionData) {
@@ -384,37 +443,87 @@
             const timestamp = new Date().toLocaleString();
             const functionText = functionData.function;
             
-            historyItem.innerHTML = `
+            // Crear el contenido del elemento de historial
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'history-content';
+            contentDiv.innerHTML = `
                 <div><strong>Función:</strong> ${functionText}</div>
                 <div><small>${timestamp}</small></div>
             `;
             
-            historyItem.onclick = () => {
-                // Restaurar los valores del formulario
-                document.getElementById('function').value = functionData.function;
-                document.getElementById('x_min').value = functionData.x_min;
-                document.getElementById('x_max').value = functionData.x_max;
-                document.getElementById('y_min').value = functionData.y_min;
-                document.getElementById('y_max').value = functionData.y_max;
-                document.getElementById('z_min').value = functionData.z_min;
-                document.getElementById('z_max').value = functionData.z_max;
-                
-                // Actualizar el gráfico
-                updatePlot();
+            // Crear el botón de eliminar
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-history-item';
+            deleteButton.innerHTML = '&times;';
+            deleteButton.setAttribute('aria-label', 'Eliminar');
+            deleteButton.onclick = (event) => {
+                event.stopPropagation();
+                deleteHistoryItem(event, historyItem);
+            };
+            
+            // Añadir el contenido y el botón al elemento de historial
+            historyItem.appendChild(contentDiv);
+            historyItem.appendChild(deleteButton);
+
+            // Store the functionData
+            historyItem.dataset.functionData = JSON.stringify(functionData);
+
+            // Añadir el manejador de clic para cargar la función al contentDiv para evitar conflictos con el botón
+            contentDiv.onclick = () => {
+                const data = JSON.parse(historyItem.dataset.functionData);
+                document.getElementById('function').value = data.function;
+                document.getElementById('x_min').value = data.x_min;
+                document.getElementById('x_max').value = data.x_max;
+                document.getElementById('y_min').value = data.y_min;
+                document.getElementById('y_max').value = data.y_max;
+                document.getElementById('z_min').value = data.z_min;
+                document.getElementById('z_max').value = data.z_max;
+
+                updatePlot(data, { fromHistory: true });
+                moveToTopAndManageSize(historyItem);
             };
             
             historyList.insertBefore(historyItem, historyList.firstChild);
-            
-            // Guardar en localStorage
+            manageHistorySize();
             saveHistoryToStorage();
+        }
+
+        function deleteHistoryItem(event, historyItem) {
+            event.stopPropagation();
+            if (historyItem) {
+                historyItem.remove();
+                saveHistoryToStorage();
+            }
+        }
+
+        function moveToTopAndManageSize(itemToMove) {
+            const historyList = document.getElementById('history-list');
+            if (historyList.firstChild !== itemToMove) {
+                historyList.insertBefore(itemToMove, historyList.firstChild);
+            }
+            manageHistorySize();
+            saveHistoryToStorage();
+        }
+
+        const MAX_HISTORY_ITEMS = 10; // Define the maximum number of history items
+
+        function manageHistorySize() {
+            const historyList = document.getElementById('history-list');
+            while (historyList.children.length > MAX_HISTORY_ITEMS) {
+                historyList.removeChild(historyList.lastChild);
+            }
         }
 
         function saveHistoryToStorage() {
             const historyList = document.getElementById('history-list');
-            const historyItems = Array.from(historyList.children).map(item => ({
-                html: item.innerHTML,
-                onclick: item.onclick.toString()
-            }));
+            const historyItems = Array.from(historyList.children).map(item => {
+                // Exclude the delete button from the saved HTML
+                const contentHtml = item.querySelector('.history-content').innerHTML;
+                return {
+                    html: contentHtml, // Save only the content HTML
+                    functionData: item.dataset.functionData
+                };
+            });
             localStorage.setItem('plotHistory', JSON.stringify(historyItems));
         }
 
@@ -424,13 +533,50 @@
             
             if (savedHistory) {
                 const historyItems = JSON.parse(savedHistory);
-                historyItems.forEach(item => {
+                historyItems.reverse().forEach(item => {
+                    // Recreate the full history item structure including the delete button
                     const historyItem = document.createElement('div');
                     historyItem.className = 'history-item';
-                    historyItem.innerHTML = item.html;
-                    historyItem.onclick = new Function(item.onclick);
+                    historyItem.dataset.functionData = item.functionData;
+
+                    // Create content div and set saved HTML
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'history-content';
+                    contentDiv.innerHTML = item.html; // Use saved content HTML
+                    
+                    // Create delete button
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'delete-history-item';
+                    deleteButton.innerHTML = '&times;'; // Use HTML entity for 'x'
+                    deleteButton.setAttribute('aria-label', 'Eliminar'); // Accessibility
+
+                    // Añadir el contenido y el botón al elemento de historial
+                    historyItem.appendChild(contentDiv);
+                    historyItem.appendChild(deleteButton);
+
+                    // Re-assign the click handler to the contentDiv
+                    contentDiv.onclick = () => {
+                        const data = JSON.parse(historyItem.dataset.functionData);
+                        document.getElementById('function').value = data.function;
+                        document.getElementById('x_min').value = data.x_min;
+                        document.getElementById('x_max').value = data.x_max;
+                        document.getElementById('y_min').value = data.y_min;
+                        document.getElementById('y_max').value = data.y_max;
+                        document.getElementById('z_min').value = data.z_min;
+                        document.getElementById('z_max').value = data.z_max;
+                        updatePlot(data, { fromHistory: true });
+                        moveToTopAndManageSize(historyItem);
+                    };
+
+                    // Re-assign the delete button handler
+                    deleteButton.onclick = (event) => {
+                        event.stopPropagation();
+                        deleteHistoryItem(event, historyItem); // Pass historyItem to delete function
+                    };
+
                     historyList.appendChild(historyItem);
                 });
+                manageHistorySize();
             }
         }
 
