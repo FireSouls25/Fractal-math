@@ -19,6 +19,7 @@ def safe_eval_function(func_str):
     replacements = {
         '^': '**',
         'np.sin': 'sin',
+        'np.sin': 'sen',
         'np.cos': 'cos',
         'np.tan': 'tan',
         'np.exp': 'exp',
@@ -170,11 +171,21 @@ def create_plot(func_str, x_range, y_range, z_range):
             dy_latex = r'\text{Error: ' + str(e).replace("'", "") + '}'
         try:
             integral_dxdy, integral_dydx = calculate_integrals(func_str, x_range, y_range)
-            int_dxdy_latex = latex(Eq(Integral(expr, (x_sym, x_range[0], x_range[1]), (y_sym, y_range[0], y_range[1])), integral_dxdy))
-            int_dydx_latex = latex(Eq(Integral(expr, (y_sym, y_range[0], y_range[1]), (x_sym, x_range[0], x_range[1])), integral_dydx))
+            x_sym, y_sym = symbols('x y')
+            expr = sympify(safe_eval_function(func_str), locals={'pi': sympy_pi, 'E': sympy_e})
+
+            if isinstance(integral_dxdy, str) and "discontinuities" in integral_dxdy:
+                int_dxdy_latex = r'\\text{' + integral_dxdy + '}'
+            else:
+                int_dxdy_latex = latex(Eq(Integral(expr, (x_sym, x_range[0], x_range[1]), (y_sym, y_range[0], y_range[1])), integral_dxdy))
+
+            if isinstance(integral_dydx, str) and "discontinuities" in integral_dydx:
+                int_dydx_latex = r'\\text{' + integral_dydx + '}'
+            else:
+                int_dydx_latex = latex(Eq(Integral(expr, (y_sym, y_range[0], y_range[1]), (x_sym, x_range[0], x_range[1])), integral_dydx))
         except Exception as e:
-            int_dxdy_latex = r'\text{Error: ' + str(e).replace("'", "") + '}'
-            int_dydx_latex = r'\text{Error: ' + str(e).replace("'", "") + '}'
+            int_dxdy_latex = r'\\text{Error: ' + str(e).replace("\'", "") + '}'
+            int_dydx_latex = r'\\text{Error: ' + str(e).replace("\'", "") + '}'
         interpreted_latex = latex(expr) if expr else r'\text{Error interpretando función}'
         return plot_json, interpreted, dx_latex, dy_latex, int_dxdy_latex, int_dydx_latex, interpreted_latex
     except Exception as e:
@@ -190,7 +201,7 @@ def calculate_derivatives(func_str):
         dx = diff(expr, x).simplify()
         dy = diff(expr, y).simplify()
         
-        # Return SymPy expressions, not strings
+        # Return SymPy expressions
         return dx, dy
     except Exception as e:
         # Return the exception object or re-raise
@@ -217,7 +228,13 @@ def calculate_integrals(func_str, x_range, y_range):
         result_dxdy = result_dxdy.simplify()
         result_dydx = result_dydx.simplify()
         
-        # Return SymPy expressions, not strings
+        # Format numerical results to 5 decimal places
+        if isinstance(result_dxdy, (int, float)):
+            result_dxdy = round(result_dxdy, 5)
+        if isinstance(result_dydx, (int, float)):
+            result_dydx = round(result_dydx, 5)
+
+        # Return SymPy expressions or formatted floats
         return result_dxdy, result_dydx
     except Exception as e:
         # Return the exception object or re-raise
@@ -240,6 +257,7 @@ def plot():
     int_dxdy_latex = ''
     int_dydx_latex = ''
     interpreted_latex = ''
+    indefinite_integral_steps = '' # Variable to store the AI integral result
 
     try:
         # Create plot
@@ -247,23 +265,38 @@ def plot():
         
         # Calculate and format derivatives
         try:
+            x_sym, y_sym = symbols('x y') # Ensure symbols are defined
+            expr = sympify(safe_eval_function(func_str), locals={'pi': sympy_pi, 'E': sympy_e}) # Re-sympify to get the expression object
             dx, dy = calculate_derivatives(func_str)
-            # Check if dx and dy are SymPy expressions before calling latex
-            dx_latex = latex(dx, mul_symbol=' ') if hasattr(dx, 'free_symbols') or isinstance(dx, (int, float)) else str(dx)
-            dy_latex = latex(dy, mul_symbol=' ') if hasattr(dy, 'free_symbols') or isinstance(dy, (int, float)) else str(dy)
+            
+            # Generate LaTeX for partial derivatives with original function and result
+            dx_latex = latex(Eq(Derivative(expr, x_sym), dx))
+            dy_latex = latex(Eq(Derivative(expr, y_sym), dy))
+
         except Exception as e:
-            dx_latex = r'\text{Error: ' + str(e).replace("'", "") + '}'
-            dy_latex = r'\text{Error: ' + str(e).replace("'", "") + '}'
+            dx_latex = r'\\text{Error: ' + str(e).replace("\'", "") + '}'
+            dy_latex = r'\\text{Error: ' + str(e).replace("\'", "") + '}'
 
         # Calculate and format integrals
         try:
             integral_dxdy, integral_dydx = calculate_integrals(func_str, x_range, y_range)
-            # Check if results are SymPy expressions before calling latex
-            int_dxdy_latex = latex(integral_dxdy, mul_symbol=' ') if hasattr(integral_dxdy, 'free_symbols') or isinstance(integral_dxdy, (int, float)) else str(integral_dxdy)
-            int_dydx_latex = latex(integral_dydx, mul_symbol=' ') if hasattr(integral_dydx, 'free_symbols') or isinstance(integral_dydx, (int, float)) else str(integral_dydx)
+            
+            # Generate LaTeX for double integrals with original function and result
+            x_sym, y_sym = symbols('x y')
+            expr = sympify(safe_eval_function(func_str), locals={'pi': sympy_pi, 'E': sympy_e})
+
+            if isinstance(integral_dxdy, str) and "discontinuities" in integral_dxdy:
+                int_dxdy_latex = r'\\text{' + integral_dxdy + '}'
+            else:
+                int_dxdy_latex = latex(Eq(Integral(expr, (x_sym, x_range[0], x_range[1]), (y_sym, y_range[0], y_range[1])), integral_dxdy))
+
+            if isinstance(integral_dydx, str) and "discontinuities" in integral_dydx:
+                int_dydx_latex = r'\\text{' + integral_dydx + '}'
+            else:
+                int_dydx_latex = latex(Eq(Integral(expr, (y_sym, y_range[0], y_range[1]), (x_sym, x_range[0], x_range[1])), integral_dydx))
         except Exception as e:
-             int_dxdy_latex = r'\text{Error: ' + str(e).replace("'", "") + '}'
-             int_dydx_latex = r'\text{Error: ' + str(e).replace("'", "") + '}'
+             int_dxdy_latex = r'\\text{Error: ' + str(e).replace("\'", "") + '}'
+             int_dydx_latex = r'\\text{Error: ' + str(e).replace("\'", "") + '}'
 
         return jsonify({
             'success': True,
